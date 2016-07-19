@@ -26,7 +26,7 @@ def outchars(msg = ""):
 	iofun.outchars(msg)
 
 
-class StatusMsgHandler(MsgHandler):
+class ContactStatusMsgHandler(MsgHandler):
 	label = None
 	def __init__(self, l):
 		self.label = l
@@ -34,6 +34,16 @@ class StatusMsgHandler(MsgHandler):
 	def processMsg(self, msg):
 		tmp = msg.getByte("command2") & 0xFF
 		iofun.out(self.label + " = " + ('OPEN' if tmp else 'CLOSED'))
+		return 1
+
+class RelayStatusMsgHandler(MsgHandler):
+	label = None
+	def __init__(self, l):
+		self.label = l
+
+	def processMsg(self, msg):
+		tmp = msg.getByte("command2") & 0xFF
+		iofun.out(self.label + " = " + ('ON' if tmp else 'OFF'))
 		return 1
 
 class DefaultMsgHandler(MsgHandler):
@@ -57,11 +67,13 @@ class IOLinc2450(Device):
 		self.querier.setMsgHandler(DefaultMsgHandler("ping"))
 		self.querier.querysd(0x0F, 0x01)
 
-	def getStatus(self):
-		"""getStatus()
-        get current light level of device"""
-		self.querier.setMsgHandler(StatusMsgHandler("contact state"))
+	def getContactStatus(self):
+		self.querier.setMsgHandler(ContactStatusMsgHandler("contact state"))
 		self.querier.querysd(0x19, 0x1)
+
+	def getRelayStatus(self):
+		self.querier.setMsgHandler(RelayStatusMsgHandler('Relay state'))
+		self.querier.querysd(0x19, 0x0)
 
 	def on(self, level=0xFF):
 		"""on(level)
