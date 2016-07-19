@@ -25,6 +25,17 @@ def out(msg = ""):
 def outchars(msg = ""):
 	iofun.outchars(msg)
 
+
+class StatusMsgHandler(MsgHandler):
+	label = None
+	def __init__(self, l):
+		self.label = l
+
+	def processMsg(self, msg):
+		tmp = msg.getByte("command2") & 0xFF
+		iofun.out(self.label + " = " + ('OPEN' if tmp else 'CLOSED'))
+		return 1
+
 class DefaultMsgHandler(MsgHandler):
 	label = None
 	def __init__(self, l):
@@ -44,8 +55,22 @@ class IOLinc2450(Device):
 		"""ping()
 		pings device"""
 		self.querier.setMsgHandler(DefaultMsgHandler("ping"))
-		self.querier.querysd(0x0F, 0x01);
+		self.querier.querysd(0x0F, 0x01)
+
+	def getStatus(self):
+		"""getStatus()
+        get current light level of device"""
+		self.querier.setMsgHandler(StatusMsgHandler("contact state"))
+		self.querier.querysd(0x19, 0x1)
+
+	def on(self, level=0xFF):
+		"""on(level)
+        switch on to given light level"""
+		iofun.writeMsg(message.createStdMsg(
+			InsteonAddress(self.getAddress()), 0x0F, 0x11, level, -1))
 
 #
 # somebody should figure out how this thing works ... why not YOU?
 #
+
+
